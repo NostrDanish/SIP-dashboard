@@ -1,6 +1,8 @@
 /**
  * SIP-01 structured protocol data — ported from the canonical spec repo
- * (github.com/NostrDanish/SIP-01, src/lib/sip01.ts). Mirrors spec v1.2.
+ * (github.com/NostrDanish/SIP-01, src/lib/sip01.ts) and the ecosystem's
+ * crawler relay configuration (github.com/NostrDanish/crawlstr,
+ * src/crawler/relays.ts). Mirrors spec v1.2.
  */
 
 export const SIP01 = {
@@ -29,6 +31,21 @@ export const LINKS = {
 /* Relay read set                                                      */
 /* ------------------------------------------------------------------ */
 
+/**
+ * SIP-01-aware index relays — the validating relay cohort. They index kind
+ * 39697, answer NIP-50 web-search operators, and advertise the
+ * `uncaged_index` capability block in their NIP-11 document (spec §15).
+ * The *.workers.dev instances run on the SIP-Booster-Relay (serverless
+ * Cloudflare worker) stack.
+ */
+export const SIP01_RELAYS = [
+  'wss://relay-na1.metanomalist.com/',
+  'wss://test-sip-relay.sip-01test.workers.dev/',
+  'wss://sip-relay-2.sip-booster-relay.workers.dev/',
+  'wss://sip-relay-3.uncaged-sip.workers.dev/',
+  'wss://sip-relay-4.sip-relay-4.workers.dev/',
+];
+
 /** NIP-50-capable relays used by the ecosystem's engines. */
 export const SEARCH_RELAYS = [
   'wss://relay.nostr.band/',
@@ -38,58 +55,323 @@ export const SEARCH_RELAYS = [
 ];
 
 /**
- * Relays the ecosystem's crawlers publish kind 39697 observations to — the
- * union of the Crawlstr and indexstr relay pools. The Tor-only onion relay is
+ * Public write relays the ecosystem's crawlers also publish kind 39697
+ * observations to, so they replicate widely. The Tor-only onion relay is
  * omitted (a clearnet browser can't reach it).
  */
 export const CRAWLER_RELAYS = [
-  'wss://relay-na1.metanomalist.com/',
   'wss://jskitty.cat/nostr',
   'wss://relay.primal.net/',
   'wss://relay.damus.io/',
   'wss://nostr.hifish.org/',
 ];
 
-/** Full ecosystem read set: crawler publish pools ∪ NIP-50 search relays ∪ dreamith. */
+/**
+ * The default app relay list — every relay this dashboard reads the SIP-01
+ * index from: SIP-01 index relays ∪ NIP-50 search relays ∪ crawler publish
+ * relays ∪ relay.dreamith.to. Editable in the Settings tab (local-only,
+ * never published); reset restores this set.
+ */
 export const OBSERVATION_RELAYS: string[] = [
-  ...new Set([...SEARCH_RELAYS, ...CRAWLER_RELAYS, 'wss://relay.dreamith.to/']),
+  ...new Set([
+    ...SIP01_RELAYS,
+    ...SEARCH_RELAYS,
+    ...CRAWLER_RELAYS,
+    'wss://relay.dreamith.to/',
+  ]),
 ];
 
 /* ------------------------------------------------------------------ */
-/* Ecosystem                                                           */
+/* Ecosystem projects                                                  */
 /* ------------------------------------------------------------------ */
 
-export interface Repo {
+export type ProjectBadge =
+  | 'Spec'
+  | 'Core'
+  | 'Engine'
+  | 'Engine +'
+  | 'Crawler'
+  | 'Indexer'
+  | 'Relay'
+  | 'Template'
+  | 'Dashboard';
+
+export interface Project {
+  id: string;
   name: string;
-  url: string;
+  /** GitHub repo name under NostrDanish (null when not yet published). */
+  repo: string | null;
+  badge: ProjectBadge;
+  version: string;
+  status: 'live' | 'beta' | 'announced';
   role: string;
-  badge: 'Spec' | 'Relay' | 'Crawler' | 'Engine' | 'Engine +' | 'Template' | 'Dashboard';
   description: string;
+  features: string[];
+  liveUrl?: string;
+  /** SIP-01 `source` tag prefixes this project publishes with (for on-chain stats). */
+  sourceTags: string[];
   keyFiles: { path: string; note: string }[];
 }
 
-export const CORE_REPO: Repo = {
-  name: 'SIP-01',
-  url: 'https://github.com/NostrDanish/SIP-01',
-  role: 'Canonical specification & documentation',
-  badge: 'Spec',
-  description:
-    'The submission-ready specification (v1.2), the byte-compatibility test vectors every implementation must pass, the extension tag registry, the cross-implementation audit, and the live explorer with a client-side validator and d-tag calculator.',
-  keyFiles: [
-    { path: 'public/spec/SIP-01.md', note: 'The full specification (v1.2)' },
-    { path: 'src/lib/sip01-utils.ts', note: 'Reference parse/validate/normalize' },
-    { path: 'docs/IMPLEMENTATION-GUIDE.md', note: 'Publish / consume / relay guide' },
-  ],
-};
-
-export const REPOS: Repo[] = [
+export const PROJECTS: Project[] = [
   {
+    id: 'sip-01',
+    name: 'SIP-01',
+    repo: 'SIP-01',
+    badge: 'Spec',
+    version: 'spec v1.2 · schema v1',
+    status: 'live',
+    role: 'Canonical specification & documentation',
+    description:
+      'The protocol itself: one addressable Nostr event (kind 39697) per (indexer pubkey, normalized URL) — a signed statement that an indexer observed a web document. Submission-ready spec, byte-compatibility test vectors, extension tag registry, cross-implementation audit, live explorer with client-side validator.',
+    features: [
+      'Three identities kept separate: d (URL), u (canonical), x (content)',
+      'Frozen core schema — change only via a v bump',
+      'Extension tag registry with x- experiment prefix',
+      '§13 test vectors every implementation must match byte-for-byte',
+      'Live explorer + d-tag calculator + validator',
+    ],
+    liveUrl: 'https://sip.shakespeare.wtf/',
+    sourceTags: [],
+    keyFiles: [
+      { path: 'public/spec/SIP-01.md', note: 'The full specification (v1.2)' },
+      { path: 'src/lib/sip01-utils.ts', note: 'Reference parse/validate/normalize' },
+      { path: 'docs/IMPLEMENTATION-GUIDE.md', note: 'Publish / consume / relay guide' },
+    ],
+  },
+  {
+    id: 'sip-01-core',
+    name: 'sip-01-core',
+    repo: 'sip-01-core',
+    badge: 'Core',
+    version: 'v0.1.0 · spec v1.2',
+    status: 'live',
+    role: 'Reference implementation + reusable search-engine core',
+    description:
+      'The protocol as a library: byte-critical SIP-01 protocol code (45 tests pinning the §13 vectors), shared 0xsearchstr:* federation contracts, relay machinery, the full provider/query/rank engine stack, votes (NIP-25), moderation, and an optional OpenAI-compatible AI layer. Any search engine builds on it through five injection seams — the core holds no brand, no trust anchors, no credentials.',
+    features: [
+      'src/protocol — byte-critical, spec-pinned reference implementation',
+      '15 built-in search providers + pluggable registry',
+      'Query parse → evaluate → rank stack (SIP-02 seed)',
+      'configureEngine() / configureRelays() host injection seams',
+      'AIProvider contract with credential-precedence resolution',
+    ],
+    sourceTags: [],
+    keyFiles: [
+      { path: 'src/protocol/', note: 'SIP-01 wire format, spec-pinned' },
+      { path: 'src/engine/', note: 'Providers + query/rank + votes' },
+      { path: 'ARCHITECTURE.md', note: 'The architecture deep-dive' },
+    ],
+  },
+  {
+    id: 'dsearch',
+    name: 'Dsearch',
+    repo: 'Dsearch',
+    badge: 'Engine',
+    version: 'flagship · SIP-02 seed',
+    status: 'live',
+    role: 'The community-driven search engine',
+    description:
+      'The flagship engine and ecosystem hub — "powered by Nostr, owned by no one". SIP-01 community index first, then 18 parallel providers (NIP-50, SearXNG, DuckDuckGo, Brave BYOK, wiki, git, Tor…). Local authoritative query-AST execution, keyword staking, query classification privacy, optional AI answers, and auto-indexing of surfaced results back into the shared pool.',
+    features: [
+      'Community index scores highest — coverage-weighted merge + rank',
+      'Structured queries: boolean, site:, lang:, tag:, after: — parsed to an AST and executed locally',
+      'Query classification: calculators and npubs never leave the Nostr tier',
+      'Keyword stakes — sign a keyword → link binding with your Nostr key',
+      'Relay auto-discovery: NIP-66 announcements + NIP-11 verification',
+    ],
+    liveUrl: 'https://dsearch.com',
+    sourceTags: ['dsearch'],
+    keyFiles: [
+      { path: 'docs/SEARCH-QUERIES.md', note: 'The structured query guide' },
+      { path: 'NIP.md', note: 'Federation contract documentation' },
+      { path: 'src/lib/dsearchProtocol.ts', note: 'The dsearch:* control plane' },
+    ],
+  },
+  {
+    id: '0xsearchstr',
+    name: '0xSearchstr',
+    repo: '0xSearchstr',
+    badge: 'Engine',
+    version: 'the original',
+    status: 'live',
+    role: 'Search engine — the first SIP-01 citizen',
+    description:
+      'The original engine. Aggregates external providers and auto-indexes fresh results as SIP-01 observations via a server-side autosigner — "just one more independent indexer". Shares one federated index with Dsearch: same kinds, same tags, different signers — a search on either warms the index for both.',
+    features: [
+      'Server-side autosigner — every search strengthens the index',
+      'Legacy kind-30078 query cache merged with kind 39697 reads',
+      'The 0xsearchstr:* federation namespaces originate here',
+      'Relay auto-discovery with 24h verified cache',
+    ],
+    liveUrl: 'https://0xsearchstr.shakespeare.wtf',
+    sourceTags: ['0xsearchstr'],
+    keyFiles: [
+      { path: 'src/lib/relayDiscovery.ts', note: 'NIP-66 + NIP-11 auto-discovery' },
+      { path: 'src/lib/webIndex.ts', note: 'Publisher/reader impl' },
+      { path: 'NIP.md', note: 'Legacy cache schema + trusted indexers' },
+    ],
+  },
+  {
+    id: '0xpresearchstr',
+    name: '0xPresearchstr',
+    repo: '0xPresearchstr',
+    badge: 'Engine +',
+    version: 'community fork',
+    status: 'live',
+    role: 'Search engine — clearnet + tor/i2p',
+    description:
+      'The extended engine: multi-network crawling (clearnet, tor, i2p seed lists), keyword stakes, and the same SIP-01 read/write path. Proof that engines layer app-specific features on top of the shared index without touching the core schema.',
+    features: [
+      'Tor network crawler backend with its own seed lists',
+      'Bundled NIP-50 relay (backend/nip50-relay)',
+      'Keyword stakes for community placement',
+      'Multi-network observations via the network extension tag',
+    ],
+    liveUrl: 'https://presearchstr.shakespeare.wtf',
+    sourceTags: ['0xpresearchstr', 'presearchstr'],
+    keyFiles: [
+      { path: 'backend/tor-crawler/src/index.ts', note: 'Tor network crawler' },
+      { path: 'backend/nip50-relay/src/index.ts', note: 'Bundled search relay' },
+      { path: 'src/lib/webIndex.ts', note: 'Publisher/reader impl' },
+    ],
+  },
+  {
+    id: 'uncaged-engine',
+    name: 'UNCAGED-ENGINE',
+    repo: 'UNCAGED-ENGINE',
+    badge: 'Template',
+    version: 'reference template',
+    status: 'live',
+    role: 'Forkable search-engine template',
+    description:
+      'The reference search-engine implementation and forkable template. Ships the canonical webIndex.ts (build / parse / validate / normalize), the per-device indexer identity, and the web-index provider that groups observations by d and ranks by independent indexer count.',
+    features: [
+      'Canonical webIndex.ts — the reference implementation',
+      'Groups by d, ranks by independent indexer agreement',
+      'Publishes observations as uncaged-engine/1',
+      'Minimal — fork it and you have an engine',
+    ],
+    liveUrl: 'https://uncaged.shakespeare.wtf',
+    sourceTags: ['uncaged-engine'],
+    keyFiles: [
+      { path: 'src/lib/webIndex.ts', note: 'Reference implementation (canonical)' },
+      { path: 'src/lib/indexerIdentity.ts', note: 'Per-device indexer identity' },
+    ],
+  },
+  {
+    id: 'crawlstr-v1',
+    name: 'Crawlstr v1',
+    repo: 'crawlstr',
+    badge: 'Crawler',
+    version: 'v1 · source=crawlstr/1',
+    status: 'live',
+    role: 'Lightweight browser scout',
+    description:
+      'Every browser a voluntary crawl node: paste a seed URL or hit Random Scout, and it fetches pages through an SSRF-guarded path, extracts metadata, and publishes signed kind 39697 observations from a per-device anonymous keypair. Battery/WiFi/bandwidth aware, robots.txt-respecting, IndexedDB-persistent — honest about browser limits.',
+    features: [
+      'Random Scout — weighted seed strategies tuned for long-tail coverage',
+      'RSS/Atom + sitemap discovery — cheap, high-value scouting',
+      'Per-domain rate limits, eco mode, charging-only mode',
+      'Kind 16919 heartbeats while running',
+      'PWA — installable, works on a phone on WiFi',
+    ],
+    liveUrl: 'https://crawlstr.shakespeare.wtf',
+    sourceTags: ['crawlstr/1'],
+    keyFiles: [
+      { path: 'src/crawler/webIndex.ts', note: 'Byte-compatible event builder' },
+      { path: 'src/crawler/safety.ts', note: 'SSRF guard at the proxy boundary' },
+      { path: 'src/data/seeds/', note: 'The Random Scout seed corpus' },
+    ],
+  },
+  {
+    id: 'crawlstr-v2',
+    name: 'Crawlstr v2',
+    repo: 'crawlstr-v2',
+    badge: 'Crawler',
+    version: 'v2 · source=crawlstr/v2',
+    status: 'beta',
+    role: 'Decentralized browser crawler, rebuilt',
+    description:
+      'The v2 rebuild, sliced from the web-crawler monorepo: the shared @sip01/protocol + @sip01/crawler-core packages underneath — hardened SSRF guard, IndexedDB crawl queue/outbox, politeness scheduler — with the Crawlstr app on top. Every observation tagged source=crawlstr/v2 so the network can tell v2 traffic apart.',
+    features: [
+      '@sip01/protocol — SIP-01 v1.2 wire format as a workspace package',
+      '@sip01/crawler-core — shared deep crawler stack',
+      'Hardened SSRF guard + politeness scheduler',
+      'Distinct source tag: crawlstr/v2',
+    ],
+    liveUrl: 'https://crawlstr.shakespeare.wtf',
+    sourceTags: ['crawlstr/v2', 'crawlstr/2'],
+    keyFiles: [
+      { path: 'packages/sip01-protocol/', note: 'The wire format package' },
+      { path: 'packages/crawler-core/', note: 'Shared crawler core' },
+      { path: 'apps/crawlstr/', note: 'The v2 web app' },
+    ],
+  },
+  {
+    id: 'indexstr-v1',
+    name: 'indexstr v1',
+    repo: 'indexstr',
+    badge: 'Indexer',
+    version: 'v1 · source=indexstr/1',
+    status: 'live',
+    role: 'Heavyweight distributed indexer',
+    description:
+      'Crawlstr evolved into a network: curated SQLite URL collections (top sites, awesome lists, feeds, music, books, movies, games), deterministic sharding across 256 slots with one home shard per node pubkey, an offline outbox, and kind 16919 heartbeats so the network measures itself without a coordinator.',
+    features: [
+      'Deterministic sharding — 256 slots, coordinator-free work splitting',
+      'Bundled curated collections as SQLite databases',
+      'Offline outbox — publishes when Nostr is reachable',
+      'Kind 16919 heartbeats: pages indexed, queue depth, shard',
+    ],
+    liveUrl: 'https://indexstr.shakespeare.wtf',
+    sourceTags: ['indexstr/1'],
+    keyFiles: [
+      { path: 'src/crawler/sharding.ts', note: 'Coordinator-free work splitting' },
+      { path: 'src/crawler/heartbeat.ts', note: 'Node heartbeats — kind 16919' },
+      { path: 'public/collections/', note: 'Curated SQLite URL collections' },
+    ],
+  },
+  {
+    id: 'indexstr-v2',
+    name: 'indexstr v2',
+    repo: 'indexstr-v2',
+    badge: 'Indexer',
+    version: 'v2 · source=indexstr/v2',
+    status: 'beta',
+    role: 'Distributed indexing network node, rebuilt',
+    description:
+      'The full deep-crawler stack in your browser on the v2 packages: SSRF-guarded fetching, IndexedDB crawl queue/outbox, politeness scheduler, curated URL collections (loadable from Blossom when the static DBs are absent), publishing observations tagged source=indexstr/v2.',
+    features: [
+      'Runs on @sip01/protocol + @sip01/crawler-core',
+      'Collections fall back to Blossom blob storage',
+      'Same 256-shard scheme, distinct v2 source tag',
+      'Self-contained pnpm workspace app',
+    ],
+    liveUrl: 'https://indexstr.shakespeare.wtf',
+    sourceTags: ['indexstr/v2', 'indexstr/2'],
+    keyFiles: [
+      { path: 'packages/crawler-core/', note: 'Queue, scheduler, publishing lane' },
+      { path: 'apps/indexstr/', note: 'The v2 web app' },
+    ],
+  },
+  {
+    id: 'uncaged-index-relay',
     name: 'UNCAGED-Index-Relay',
-    url: 'https://github.com/NostrDanish/UNCAGED-Index-Relay',
-    role: 'Validating index relay',
+    repo: 'UNCAGED-Index-Relay',
     badge: 'Relay',
+    version: 'self-hosted · OpenSearch',
+    status: 'live',
+    role: 'Validating index relay',
     description:
       'The reference relay. Validates SIP-01 events at ingestion (d ↔ u and x ↔ content verified at the door), indexes them into dedicated OpenSearch fields, answers NIP-50 web-search operators, advertises capabilities via NIP-11, and federates with NIP-77 negentropy sync.',
+    features: [
+      'Ingestion-time validation — placeholder hashes rejected at the door',
+      'OpenSearch-backed web-search operators',
+      'NIP-11 uncaged_index capability advertisement',
+      'NIP-77 negentropy federation',
+    ],
+    sourceTags: [],
     keyFiles: [
       { path: 'src/web-document.ts', note: 'SIP-01 validation + field extraction' },
       { path: 'src/opensearch.ts', note: 'Web-search operator → query mapping' },
@@ -97,68 +379,97 @@ export const REPOS: Repo[] = [
     ],
   },
   {
-    name: 'Crwalstr',
-    url: 'https://github.com/NostrDanish/Crwalstr',
-    role: 'Browser web crawler',
-    badge: 'Crawler',
+    id: 'sip-booster-relay',
+    name: 'SIP-Booster-Relay',
+    repo: null,
+    badge: 'Relay',
+    version: 'serverless · Cloudflare workers',
+    status: 'live',
+    role: 'Serverless index relay cohort',
     description:
-      'A pure SIP-01 publisher. Each browser generates its own anonymous indexer keypair (never the user’s personal key), crawls pages, and publishes byte-compatible kind 39697 observations to the shared index.',
+      'The serverless relay stack: SIP-01-aware index relays running as Cloudflare workers — validating kind 39697 at the edge, no origin server to own. The live cohort is already part of the default crawler publish set; the source repository is being prepared for release.',
+    features: [
+      'wss://test-sip-relay.sip-01test.workers.dev',
+      'wss://sip-relay-2.sip-booster-relay.workers.dev',
+      'wss://sip-relay-3.uncaged-sip.workers.dev',
+      'wss://sip-relay-4.sip-relay-4.workers.dev',
+      'Edge validation of kind 39697, serverless scale',
+    ],
+    sourceTags: [],
+    keyFiles: [],
+  },
+  {
+    id: 'crawlstr-sip-relay',
+    name: 'Crawlstr-SIP-Relay',
+    repo: null,
+    badge: 'Relay',
+    version: 'android · announced',
+    status: 'announced',
+    role: 'Android index relay',
+    description:
+      'An index relay that runs on an Android device — the relay layer joining the crawlers in your pocket. Announced in the Dsearch ecosystem map; repository landing soon.',
+    features: [
+      'Relay-grade SIP-01 storage on a phone',
+      'Pairs with Crawlstr on the same device',
+      'Repository landing soon',
+    ],
+    sourceTags: [],
+    keyFiles: [],
+  },
+  {
+    id: 'sip-dashboard',
+    name: 'SIP-dashboard',
+    repo: 'SIP-dashboard',
+    badge: 'Dashboard',
+    version: 'this site',
+    status: 'live',
+    role: 'Live network telemetry (you are here)',
+    description:
+      'The main SIP dashboard: reads the shared index straight from the ecosystem relays in your browser — mission-control stats, shard coverage, node heartbeats, per-relay provenance, spec conformance re-validation, ecosystem explorer, and a fully editable relay list with NIP-66/NIP-11 auto-discovery. Publishes nothing, tracks no one.',
+    features: [
+      'Everything derived from the events — no hardcoded indexer registry',
+      'Client-side SHA-256 re-validation of sampled observations',
+      'Editable app relay list + NIP-66 discovery + NIP-11 probes',
+      'Refreshes every 60 seconds',
+    ],
+    sourceTags: [],
     keyFiles: [
-      { path: 'src/crawler/webIndex.ts', note: 'Byte-compatible event builder' },
-      { path: 'src/crawler/indexerIdentity.ts', note: 'Per-device anonymous indexer keys' },
-      { path: 'NIP.md', note: 'Publisher-side schema reference' },
+      { path: 'src/hooks/useIndexStats.ts', note: 'Per-relay fan-out + aggregation' },
+      { path: 'src/lib/sip01-utils.ts', note: 'Byte-compatible validation port' },
+    ],
+  },
+];
+
+/** Lineage strip — how the engines evolved (from the Dsearch README). */
+export const LINEAGE = [
+  { name: '0xSearchstr', note: 'the original aggregator' },
+  { name: 'UNCAGED-ENGINE', note: 'the minimal template' },
+  { name: '0xPresearchstr', note: 'the community fork' },
+  { name: 'Dsearch', note: 'the independent ecosystem' },
+];
+
+/** The scout / indexer split (from the Crawlstr README). */
+export const NODE_CLASSES = [
+  {
+    name: 'Crawlstr',
+    cls: 'lightweight scout',
+    motto: '"I found something"',
+    rows: [
+      ['Role', 'Human-directed & random discovery'],
+      ['Seeds', 'You paste a URL, or Random Scout picks'],
+      ['Queue', 'Small, session-scoped'],
+      ['Device', 'Any browser, incl. a phone on WiFi'],
     ],
   },
   {
     name: 'indexstr',
-    url: 'https://github.com/NostrDanish/indexstr',
-    role: 'Distributed indexing network',
-    badge: 'Crawler',
-    description:
-      'Crawlstr evolved into a network: curated URL collections, deterministic sharding (256 shards, one home shard per node pubkey), offline outbox, and node heartbeats (kind 16919) so the network can measure itself without a coordinator.',
-    keyFiles: [
-      { path: 'src/crawler/webIndex.ts', note: 'Byte-compatible event builder' },
-      { path: 'src/crawler/heartbeat.ts', note: 'Node heartbeats — kind 16919' },
-      { path: 'src/crawler/sharding.ts', note: 'Coordinator-free work splitting' },
-    ],
-  },
-  {
-    name: 'UNCAGED-ENGINE',
-    url: 'https://github.com/NostrDanish/UNCAGED-ENGINE',
-    role: 'Search engine template',
-    badge: 'Template',
-    description:
-      'The reference search-engine implementation and forkable template. Ships the canonical webIndex.ts (build / parse / validate / normalize), the per-device indexer identity, and the web-index provider that groups observations by d and ranks by independent indexer count.',
-    keyFiles: [
-      { path: 'src/lib/webIndex.ts', note: 'Reference implementation (canonical)' },
-      { path: 'src/lib/indexerIdentity.ts', note: 'Per-device indexer identity' },
-      { path: 'docs/SEARCH_INDEX_PROTOCOL.md', note: 'Protocol draft (v1)' },
-    ],
-  },
-  {
-    name: '0xSearchstr',
-    url: 'https://github.com/NostrDanish/0xSearchstr',
-    role: 'Search engine',
-    badge: 'Engine',
-    description:
-      'The original engine. Aggregates external providers and auto-indexes fresh results as SIP-01 observations via a server-side autosigner — “just one more independent indexer”. Reads merge the legacy kind-30078 query cache with kind 39697.',
-    keyFiles: [
-      { path: 'src/lib/webIndex.ts', note: 'Publisher/reader impl' },
-      { path: 'NIP.md', note: 'Legacy cache schema + trusted indexers' },
-      { path: 'docs/SEARCH_INDEX_PROTOCOL.md', note: 'Protocol draft (v1)' },
-    ],
-  },
-  {
-    name: '0xPresearchstr',
-    url: 'https://github.com/NostrDanish/0xPresearchstr',
-    role: 'Search engine — clearnet + tor/i2p',
-    badge: 'Engine +',
-    description:
-      'The extended engine: multi-network crawling (clearnet, tor, i2p seed lists), keyword stakes, and the same SIP-01 read/write path. Proof that engines layer app-specific features on top of the shared index without touching the core schema.',
-    keyFiles: [
-      { path: 'backend/tor-crawler/src/index.ts', note: 'Tor network crawler' },
-      { path: 'backend/nip50-relay/src/index.ts', note: 'Bundled search relay' },
-      { path: 'src/lib/webIndex.ts', note: 'Publisher/reader impl' },
+    cls: 'heavyweight indexer',
+    motto: '"I operate indexing capacity"',
+    rows: [
+      ['Role', 'Systematic distributed crawling'],
+      ['Seeds', 'Bundled curated SQLite collections'],
+      ['Queue', 'Massive, sharded across 256 slots'],
+      ['Device', 'Desktop/VPS-class contribution'],
     ],
   },
 ];
