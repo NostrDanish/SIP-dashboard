@@ -98,3 +98,11 @@ export function heartbeatFamily(source: string | undefined): HeartbeatFamily {
   if (s.startsWith('indexstr')) return 'indexstr';
   return 'unknown';
 }
+
+/** Crawler software generation, from a `source` tag: 'v2' | 'v1' | null. */
+export function sourceVersion(source: string | undefined): 'v2' | 'v1' | null {
+  const s = (source ?? '').toLowerCase();
+  if (/\/(v?2)$/.test(s)) return 'v2';
+  if (/\/(v?1)$/.test(s)) return 'v1';
+  return null;
+}
