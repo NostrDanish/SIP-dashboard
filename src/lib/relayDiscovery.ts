@@ -51,7 +51,6 @@ const SEED_CANDIDATES = [
  * queried too (deduped).
  */
 const NIP66_BOOTSTRAP = [
-  'wss://relay.nostr.band/',
   'wss://relay.primal.net/',
   'wss://relay.damus.io/',
 ];
