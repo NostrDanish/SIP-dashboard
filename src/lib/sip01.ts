@@ -44,11 +44,11 @@ export const SIP01_RELAYS = [
   'wss://sip-relay-2.sip-booster-relay.workers.dev/',
   'wss://sip-relay-3.uncaged-sip.workers.dev/',
   'wss://sip-relay-4.sip-relay-4.workers.dev/',
+  'wss://savedd-sip-relay.savedd-sip-relay.workers.dev/',
 ];
 
 /** NIP-50-capable relays used by the ecosystem's engines. */
 export const SEARCH_RELAYS = [
-  'wss://relay.nostr.band/',
   'wss://relay.ditto.pub/',
   'wss://search.nos.today/',
   'wss://relay.noswhere.com/',
@@ -393,6 +393,7 @@ export const PROJECTS: Project[] = [
       'wss://sip-relay-2.sip-booster-relay.workers.dev',
       'wss://sip-relay-3.uncaged-sip.workers.dev',
       'wss://sip-relay-4.sip-relay-4.workers.dev',
+      'wss://savedd-sip-relay.savedd-sip-relay.workers.dev',
       'Edge validation of kind 39697, serverless scale',
     ],
     sourceTags: [],
