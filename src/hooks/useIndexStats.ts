@@ -6,18 +6,20 @@
  * (or kind 16919 heartbeats) appears on the dashboard automatically, which is
  * the point: Crawlstr, indexstr, and every future indexer share one pool.
  *
- * Reads fan out per relay over the ecosystem read set (crawler publish pools
- * ∪ NIP-50 search relays ∪ relay.dreamith.to). Kind 39697 lives on ANY
- * relay — the index relay is just a relay with extra validation/search — so
- * the dashboard reports per-relay coverage alongside the stats.
+ * Reads fan out per relay over the app relay list — editable in the
+ * Settings tab (default: the ecosystem read set). Kind 39697 lives on ANY
+ * relay — the index relay is just a relay with extra validation/search —
+ * so the dashboard reports per-relay coverage alongside the stats.
  *
  * Ported from github.com/NostrDanish/SIP-01 src/hooks/useIndexStats.ts,
  * re-based on nostr-tools SimplePool (no app framework required).
+ *
+ * @param readRelays the app relay list (URLs with read=true)
  */
 import { useEffect, useRef, useState } from 'react';
 import { SimplePool } from 'nostr-tools/pool';
 
-import { OBSERVATION_RELAYS, SIP01 } from '@/lib/sip01';
+import { SIP01 } from '@/lib/sip01';
 import {
   parseSip01Event,
   validateSip01Event,
@@ -172,12 +174,13 @@ export interface IndexStats {
 /** How often the dashboard re-reads the relays. */
 const REFRESH_MS = 60_000;
 
-export function useIndexStats() {
+export function useIndexStats(readRelays: string[]) {
   const [stats, setStats] = useState<IndexStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cycle, setCycle] = useState(0);
   const mounted = useRef(true);
+  const relayKey = readRelays.join(',');
 
   useEffect(() => {
     const t = setInterval(() => setCycle((c) => c + 1), REFRESH_MS);
@@ -194,7 +197,7 @@ export function useIndexStats() {
 
       try {
         const perRelay = await Promise.all(
-          OBSERVATION_RELAYS.map(async (url) => {
+          readRelays.map(async (url) => {
             try {
               const { events, timedOut } = await fetchObservationWindow(url, deadline);
               let heartbeats: SipEvent[] = [];
@@ -408,9 +411,9 @@ export function useIndexStats() {
         setError(e instanceof Error ? e.message : 'Failed to read relays');
       } finally {
         /* Free the sockets between cycles — reconnecting is cheap and the
-           relays see a polite reader instead of 11 idle connections. */
+           relays see a polite reader instead of idle connections. */
         try {
-          pool?.close(OBSERVATION_RELAYS);
+          pool?.close(readRelays);
           pool = null;
         } catch {
           /* ignore */
@@ -423,7 +426,7 @@ export function useIndexStats() {
     return () => {
       mounted.current = false;
     };
-  }, [cycle]);
+  }, [cycle, relayKey]);
 
   return { stats, loading, error };
 }
