@@ -1,25 +1,34 @@
 import type { IndexStats } from '@/hooks/useIndexStats';
 import { Panel, SectionHeader, StatusPill, Skeleton } from '@/components/pd';
 import { formatNumber, relayHost, shortKey, timeAgo } from '@/lib/format';
-import { heartbeatFamily, HEARTBEAT_KIND, type ParsedHeartbeat } from '@/lib/heartbeat';
+import { heartbeatFamily, sourceVersion, HEARTBEAT_KIND, type ParsedHeartbeat } from '@/lib/heartbeat';
 import { SIP01 } from '@/lib/sip01';
 
 const FAMILY_META = {
   indexstr: { color: '#a855f7', desc: 'Distributed indexing network — sharded crawling + heartbeats' },
   crawlstr: { color: '#f0b45a', desc: 'Browser scouts — per-device anonymous indexer keys' },
-  other: { color: '#7c87a0', desc: 'Any other SIP-01 publisher — the pool is open' },
+  other: { color: '#7c87a0', desc: 'Engines & any other SIP-01 publisher — the pool is open' },
 } as const;
 
 function FamilyCards({ stats }: { stats: IndexStats }) {
+  // Per-version observation counts, derived live from the window.
+  const versionCount = (family: string, version: 'v1' | 'v2') =>
+    stats.observations.filter((o) => {
+      const src = (o.source ?? '').toLowerCase();
+      return src.startsWith(family) && sourceVersion(o.source) === version;
+    }).length;
+
   const families = (['indexstr', 'crawlstr', 'other'] as const).map((fam) => {
     const obs = stats.families.find((f) => f.family === fam);
     const live = stats.liveByFamily[fam === 'other' ? 'unknown' : fam];
-    return { fam, obs, live };
+    const v1 = fam === 'other' ? 0 : versionCount(fam, 'v1');
+    const v2 = fam === 'other' ? 0 : versionCount(fam, 'v2');
+    return { fam, obs, live, v1, v2 };
   });
 
   return (
     <div className="grid gap-px border border-[#1a2540] bg-[#1a2540] md:grid-cols-3">
-      {families.map(({ fam, obs, live }) => {
+      {families.map(({ fam, obs, live, v1, v2 }) => {
         const meta = FAMILY_META[fam];
         return (
           <div key={fam} className="bg-[#0b1120] p-5">
@@ -45,6 +54,16 @@ function FamilyCards({ stats }: { stats: IndexStats }) {
                 </div>
               ))}
             </div>
+            {fam !== 'other' && (
+              <div className="font-mono-pd mt-3 flex gap-2 text-[9px] uppercase tracking-[0.16em]">
+                <span className="border border-[#1a2540] px-2 py-0.5 text-[#7c87a0]">
+                  v1 · {formatNumber(v1)} obs
+                </span>
+                <span className={`border px-2 py-0.5 ${v2 > 0 ? 'border-[#f0b45a]/60 bg-[#f0b45a]/10 text-[#f0b45a]' : 'border-[#1a2540] text-[#7c87a0]'}`}>
+                  v2 · {formatNumber(v2)} obs
+                </span>
+              </div>
+            )}
             <div className="font-mono-pd mt-3 text-[10px] text-[#7c87a0]">
               {obs?.sources.length ? `source: ${obs.sources.join(', ')}` : 'no observations in window'}
               {obs && obs.lastSeen > 0 && <span className="float-right">{timeAgo(obs.lastSeen)}</span>}
@@ -163,7 +182,7 @@ function RelayCoverage({ stats }: { stats: IndexStats }) {
 
 export function NetworkSection({ stats, loading }: { stats: IndexStats | null; loading: boolean }) {
   return (
-    <section id="network" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-16 sm:px-6">
+    <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
       <SectionHeader
         index="02"
         eyebrow="crawler network"
