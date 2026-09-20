@@ -40,7 +40,7 @@ export function Ticker({ stats }: { stats: IndexStats | null }) {
 
   const doubled = [...items, ...items];
   return (
-    <div className="relative mt-14 overflow-hidden border-b border-[#1a2540] bg-[#0b1120]/60 py-2">
+    <div className="relative mt-[93px] overflow-hidden border-b border-[#1a2540] bg-[#0b1120]/60 py-2">
       <div className="ticker-track">
         {doubled.map((it, i) => (
           <Item key={i} label={it.label} value={it.value} tone={it.tone} />

@@ -100,12 +100,14 @@ export function Hero({ stats }: { stats: IndexStats | null }) {
             >
               Read the spec →
             </a>
-            <a
-              href="#network"
+            <button
+              onClick={() => {
+                window.location.hash = '/network';
+              }}
               className="font-mono-pd border border-[#1a2540] px-5 py-2.5 text-[11px] uppercase tracking-[0.18em] text-[#ede6d6] transition-colors hover:border-[#a855f7] hover:text-[#a855f7]"
             >
               Network status ↓
-            </a>
+            </button>
           </div>
 
           {/* inline live strip */}
