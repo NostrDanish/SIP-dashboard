@@ -1,10 +1,13 @@
 import { Routes, Route } from 'react-router'
+import { RelayConfigProvider } from '@/hooks/useRelayConfig'
 import Home from './pages/Home'
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-    </Routes>
+    <RelayConfigProvider>
+      <Routes>
+        <Route path="/" element={<Home />} />
+      </Routes>
+    </RelayConfigProvider>
   )
 }
