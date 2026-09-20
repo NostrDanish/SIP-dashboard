@@ -61,7 +61,7 @@ const QUICKSTART = `const events = await nostr.query([
 
 export function ProtocolSection() {
   return (
-    <section id="protocol" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-16 sm:px-6">
+    <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
       <SectionHeader
         index="05"
         eyebrow="the protocol"
@@ -119,6 +119,17 @@ export function ProtocolSection() {
                 full implementation guide →
               </a>
             </div>
+          </Panel>
+
+          <Panel label="what's next · sip-02 (draft)">
+            <p className="text-[12.5px] leading-relaxed text-[#9aa3b8]">
+              SIP-01 indexes <em>documents</em>. <span className="font-mono-pd text-[#a855f7]">SIP-02</span> is
+              the draft query layer: structured search syntax (boolean,{' '}
+              <span className="font-mono-pd">site:</span>, <span className="font-mono-pd">lang:</span>,{' '}
+              <span className="font-mono-pd">tag:</span>, <span className="font-mono-pd">after:</span>) parsed
+              into an AST and executed locally and authoritatively — operators are never stripped and hoped
+              for. The Dsearch engine is the reference implementation seed.
+            </p>
           </Panel>
         </div>
 
