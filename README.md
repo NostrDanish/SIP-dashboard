@@ -1,28 +1,27 @@
 # SIP-dashboard
 
-**Live network telemetry for [SIP-01](https://github.com/NostrDanish/SIP-01) — the Decentralized Search Index Protocol on Nostr.**
+**The main dashboard for [SIP-01](https://github.com/NostrDanish/SIP-01) — the Decentralized Search Index Protocol on Nostr.** Live network telemetry, ecosystem explorer, and relay control room — read directly from the ecosystem relays in your browser. Publishes nothing, tracks no one, trusts nothing it cannot recompute.
 
 One shared decentralized index. Many independent indexers. Many independent search engines. No single owner.
 
-This dashboard reads the shared index **directly from the ecosystem relays in your browser** — it publishes nothing, tracks no one, and trusts nothing it cannot recompute.
+## Tabs
 
-## What it shows
-
-- **Mission control** — observations read (kind `39697`), unique documents (distinct `d` tags), independent indexers, hosts observed, self-reported crawler totals
-- **Shard coverage** — the 256-shard indexstr address space (`00`–`FF`), lit per live node heartbeat (kind `16919`, 1h TTL)
-- **Spec conformance** — every sampled observation re-validated client-side (`d ↔ u`, `x ↔ content`, tag shapes) against the UNCAGED Index Relay's ingestion rules
-- **Node status** — live crawler nodes (Crawlstr scouts / indexstr network), per-software family cards, freshest heartbeats
-- **Per-relay coverage** — provenance for every event: crawler publish pools ∪ NIP-50 search relays
-- **The shared index** — observations per UTC day, top topics / hosts / languages / networks, indexer leaderboard, freshest observations
-- **Ecosystem & protocol** — all repos, the frozen core tag set, the extension registry, quickstart
+- **Overview** — protocol hero, event anatomy, mission-control stats (observations, documents, indexers, hosts, self-reported crawler totals), the 256-shard coverage gauge, and client-side spec conformance (every sampled observation re-validated: `d ↔ u`, `x ↔ content`, tag shapes)
+- **Network** — live crawler nodes (kind `16919` heartbeats), per-family cards with **v1/v2 version breakdowns** (Crawlstr scouts / indexstr network), freshest-heartbeat node table, per-relay provenance bars
+- **Index** — observations per UTC day, top topics / hosts / languages / networks, indexer leaderboard, freshest-observations feed
+- **Ecosystem** — deep profiles for every project: SIP-01 spec, sip-01-core, Dsearch, 0xSearchstr, 0xPresearchstr, UNCAGED-ENGINE, Crawlstr v1/v2, indexstr v1/v2, UNCAGED-Index-Relay, SIP-Booster-Relay (serverless worker cohort), Crawlstr-SIP-Relay — with live GitHub stats (stars, forks, last push) and on-chain contribution counters derived from the current observation window
+- **Protocol** — the frozen core tag set, extension registry + rules, quickstart, and the SIP-02 (query layer) draft note
+- **Settings** — the app relay list: add / remove / toggle / reset (stored locally, never published), automatic NIP-11 capability probes per relay (SIP-01 `uncaged_index` + NIP-50 badges + latency), and **auto-discovery** of NIP-50/SIP-01 relays (NIP-66 kind 30166 announcements → NIP-11 verification, one-click add — nothing is added automatically)
 
 ## Data layer
 
 Everything is derived from the events themselves — no hardcoded indexer registry. Any crawler that starts publishing valid kind `39697` observations (or kind `16919` heartbeats) appears automatically.
 
 - `src/lib/sip01-utils.ts` — byte-compatible port of the reference parse / validate / normalize (spec §5–§8)
-- `src/lib/heartbeat.ts` — kind `16919` heartbeat parsing (indexstr schema)
+- `src/lib/heartbeat.ts` — kind `16919` heartbeat parsing (indexstr schema) + source version detection
+- `src/lib/relayDiscovery.ts` — NIP-66 + NIP-11 auto-discovery (ported from 0xSearchstr)
 - `src/hooks/useIndexStats.ts` — per-relay fan-out with paging + timeouts, cross-relay dedup, aggregation (refreshes every 60s)
+- `src/hooks/useRelayConfig.tsx` — the editable app relay list (localStorage, ported from the SIP-01 repo's settings model)
 
 ## Stack
 
@@ -36,19 +35,9 @@ npm run dev
 npm run build
 ```
 
-## CI
-
-GitHub Actions workflow (lint → build → dist artifact) is ready in the repo as `.github/workflows/ci.yml`. If it's not on the default branch yet, add it locally:
-
-```bash
-git clone https://github.com/NostrDanish/SIP-dashboard.git
-cd SIP-dashboard
-# copy ci.yml into .github/workflows/ then:
-git add .github/workflows/ci.yml && git commit -m "Add frontend CI" && git push
-```
-
 ## Links
 
 - Spec: [`public/spec/SIP-01.md`](https://github.com/NostrDanish/SIP-01/blob/main/public/spec/SIP-01.md) (v1.2)
 - Documentation site: [sip.shakespeare.wtf](https://sip.shakespeare.wtf/)
 - Implementation guide: [`docs/IMPLEMENTATION-GUIDE.md`](https://github.com/NostrDanish/SIP-01/blob/main/docs/IMPLEMENTATION-GUIDE.md)
+- Flagship engine: [dsearch.com](https://dsearch.com)
