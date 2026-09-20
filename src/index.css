@@ -1,0 +1,230 @@
+@import '@fontsource-variable/inter';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+@import '@fontsource/jetbrains-mono/700.css';
+@import '@fontsource/jetbrains-mono/800.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * PROTOCOL DARK — custom theme
+ * SIP-01 brand amber #F0B45A + Nostr purple #8E30EB on deep-space black.
+ * Mission-control terminal material: hairline borders, phosphor glow,
+ * scanline overlay, JetBrains Mono data chrome, Inter prose.
+ */
+@layer base {
+  :root {
+    --background: 222 47% 4%;          /* #050810 */
+    --foreground: 40 20% 92%;
+    --card: 222 40% 7%;                /* #0B1120 */
+    --card-foreground: 40 20% 92%;
+    --popover: 222 40% 7%;
+    --popover-foreground: 40 20% 92%;
+    --primary: 36 82% 65%;             /* #F0B45A SIP-01 amber */
+    --primary-foreground: 222 47% 4%;
+    --secondary: 222 30% 12%;          /* #111A2B */
+    --secondary-foreground: 40 20% 92%;
+    --muted: 222 30% 12%;
+    --muted-foreground: 222 15% 55%;   /* #7C87A0 */
+    --accent: 272 81% 55%;             /* #8E30EB nostr purple */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 65%;          /* #F87171 */
+    --destructive-foreground: 0 0% 100%;
+    --border: 221 39% 18%;             /* #1A2540 */
+    --input: 221 39% 18%;
+    --ring: 36 82% 65%;
+    --radius: 0.25rem;
+
+    /* Protocol Dark custom tokens */
+    --pd-amber: #f0b45a;
+    --pd-amber-hot: #fbbf24;
+    --pd-purple: #8e30eb;
+    --pd-purple-soft: #a855f7;
+    --pd-mint: #34d399;
+    --pd-red: #f87171;
+    --pd-cyan: #22d3ee;
+    --pd-panel: #0b1120;
+    --pd-panel-2: #111a2b;
+    --pd-line: #1a2540;
+    --pd-text: #dbd9d3;
+    --pd-dim: #7c87a0;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    color-scheme: dark;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: #050810;
+    color: var(--pd-text);
+    font-family: 'Inter Variable', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background: rgba(240, 180, 90, 0.28);
+    color: #fff;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #050810;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1a2540;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #f0b45a;
+  }
+}
+
+@layer utilities {
+  .font-mono-pd {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  /* Phosphor glow on amber signal text */
+  .glow-amber {
+    color: var(--pd-amber);
+    text-shadow: 0 0 12px rgba(240, 180, 90, 0.45), 0 0 42px rgba(240, 180, 90, 0.18);
+  }
+  .glow-purple {
+    color: var(--pd-purple-soft);
+    text-shadow: 0 0 12px rgba(168, 85, 247, 0.5), 0 0 42px rgba(142, 48, 235, 0.22);
+  }
+  .glow-mint {
+    color: var(--pd-mint);
+    text-shadow: 0 0 12px rgba(52, 211, 153, 0.5);
+  }
+
+  /* CRT scanline overlay (fixed, full-viewport, non-interactive) */
+  .scanlines::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 2px,
+      rgba(0, 0, 0, 0.14) 3px
+    );
+    mix-blend-mode: multiply;
+  }
+
+  /* Hairline panel */
+  .panel {
+    background: linear-gradient(180deg, rgba(17, 26, 43, 0.55), rgba(11, 17, 32, 0.85));
+    border: 1px solid var(--pd-line);
+  }
+
+  /* Live status dot */
+  .dot-live {
+    position: relative;
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    background: var(--pd-mint);
+    box-shadow: 0 0 8px rgba(52, 211, 153, 0.8);
+    animation: pulse-dot 1.5s ease-in-out infinite;
+  }
+  .dot-warn {
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    background: var(--pd-amber-hot);
+    box-shadow: 0 0 8px rgba(251, 191, 36, 0.8);
+    animation: pulse-dot 1.8s ease-in-out infinite;
+  }
+  .dot-dead {
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    background: var(--pd-red);
+    box-shadow: 0 0 6px rgba(248, 113, 113, 0.6);
+  }
+
+  /* Ticker marquee */
+  .ticker-track {
+    display: flex;
+    width: max-content;
+    animation: ticker-scroll 46s linear infinite;
+  }
+  .ticker-track:hover {
+    animation-play-state: paused;
+  }
+
+  /* Staggered reveal */
+  .reveal {
+    opacity: 0;
+    transform: translateY(14px);
+    animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  /* Radar sweep */
+  .radar-sweep {
+    background: conic-gradient(
+      from 0deg,
+      rgba(240, 180, 90, 0) 0deg,
+      rgba(240, 180, 90, 0.55) 40deg,
+      rgba(240, 180, 90, 0) 80deg
+    );
+    animation: radar-rotate 4.2s linear infinite;
+  }
+
+  /* Shard cell flicker on load */
+  .shard-cell {
+    transition: background-color 0.4s ease, box-shadow 0.4s ease;
+  }
+
+  .blink {
+    animation: blink-cursor 1.1s step-end infinite;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.82); }
+}
+
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes rise {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes radar-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track, .radar-sweep, .dot-live, .dot-warn, .reveal, .blink {
+    animation: none !important;
+  }
+  .reveal { opacity: 1; transform: none; }
+}
