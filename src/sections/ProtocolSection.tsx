@@ -78,7 +78,7 @@ export function ProtocolSection() {
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
+      <div className="grid gap-6 grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
         <div className="space-y-6">
           <Panel label="modular by design">
             <p className="text-[12.5px] leading-relaxed text-[#9aa3b8]">
