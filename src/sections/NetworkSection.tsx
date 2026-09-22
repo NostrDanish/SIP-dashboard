@@ -12,23 +12,27 @@ const FAMILY_META = {
 
 function FamilyCards({ stats }: { stats: IndexStats }) {
   // Per-version observation counts, derived live from the window.
-  const versionCount = (family: string, version: 'v1' | 'v2') =>
-    stats.observations.filter((o) => {
+  const versionCounts = (family: string): Map<number, number> => {
+    const counts = new Map<number, number>();
+    for (const o of stats.observations) {
       const src = (o.source ?? '').toLowerCase();
-      return src.startsWith(family) && sourceVersion(o.source) === version;
-    }).length;
+      if (!src.startsWith(family)) continue;
+      const v = sourceVersion(o.source);
+      if (v !== null) counts.set(v, (counts.get(v) ?? 0) + 1);
+    }
+    return counts;
+  };
 
   const families = (['indexstr', 'crawlstr', 'other'] as const).map((fam) => {
     const obs = stats.families.find((f) => f.family === fam);
     const live = stats.liveByFamily[fam === 'other' ? 'unknown' : fam];
-    const v1 = fam === 'other' ? 0 : versionCount(fam, 'v1');
-    const v2 = fam === 'other' ? 0 : versionCount(fam, 'v2');
-    return { fam, obs, live, v1, v2 };
+    const versions = fam === 'other' ? new Map<number, number>() : versionCounts(fam);
+    return { fam, obs, live, versions };
   });
 
   return (
     <div className="grid gap-px border border-[#1a2540] bg-[#1a2540] md:grid-cols-3">
-      {families.map(({ fam, obs, live, v1, v2 }) => {
+      {families.map(({ fam, obs, live, versions }) => {
         const meta = FAMILY_META[fam];
         return (
           <div key={fam} className="bg-[#0b1120] p-5">
@@ -54,14 +58,25 @@ function FamilyCards({ stats }: { stats: IndexStats }) {
                 </div>
               ))}
             </div>
-            {fam !== 'other' && (
-              <div className="font-mono-pd mt-3 flex gap-2 text-[9px] uppercase tracking-[0.16em]">
-                <span className="border border-[#1a2540] px-2 py-0.5 text-[#7c87a0]">
-                  v1 · {formatNumber(v1)} obs
-                </span>
-                <span className={`border px-2 py-0.5 ${v2 > 0 ? 'border-[#f0b45a]/60 bg-[#f0b45a]/10 text-[#f0b45a]' : 'border-[#1a2540] text-[#7c87a0]'}`}>
-                  v2 · {formatNumber(v2)} obs
-                </span>
+            {fam !== 'other' && versions.size > 0 && (
+              <div className="font-mono-pd mt-3 flex flex-wrap gap-2 text-[9px] uppercase tracking-[0.16em]">
+                {[...versions.entries()]
+                  .sort((a, b) => a[0] - b[0])
+                  .map(([v, count]) => {
+                    const latest = v === Math.max(...versions.keys());
+                    return (
+                      <span
+                        key={v}
+                        className={`border px-2 py-0.5 ${
+                          latest && count > 0
+                            ? 'border-[#f0b45a]/60 bg-[#f0b45a]/10 text-[#f0b45a]'
+                            : 'border-[#1a2540] text-[#7c87a0]'
+                        }`}
+                      >
+                        v{v} · {formatNumber(count)} obs
+                      </span>
+                    );
+                  })}
               </div>
             )}
             <div className="font-mono-pd mt-3 text-[10px] text-[#7c87a0]">
