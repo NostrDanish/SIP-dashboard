@@ -190,7 +190,7 @@ function RecentFeed({ stats }: { stats: IndexStats }) {
 
 export function IndexSection({ stats, loading }: { stats: IndexStats | null; loading: boolean }) {
   return (
-    <section id="index" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-16 sm:px-6">
+    <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
       <SectionHeader index="03" eyebrow="observation layer" title="The shared index" />
       {loading && !stats ? (
         <div className="grid gap-6 lg:grid-cols-2">
@@ -199,7 +199,7 @@ export function IndexSection({ stats, loading }: { stats: IndexStats | null; loa
         </div>
       ) : stats ? (
         <div className="space-y-6">
-          <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+          <div className="grid gap-6 grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
             <ActivityChart stats={stats} />
             <RankList label="top topics · t tags" items={stats.topics} accent="#a855f7" max={11} />
           </div>
@@ -213,7 +213,7 @@ export function IndexSection({ stats, loading }: { stats: IndexStats | null; loa
               max={8}
             />
           </div>
-          <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+          <div className="grid gap-6 grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
             <Leaderboard stats={stats} />
             <RecentFeed stats={stats} />
           </div>
