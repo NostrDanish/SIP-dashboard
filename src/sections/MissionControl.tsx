@@ -114,7 +114,7 @@ export function MissionControl({ stats, loading }: { stats: IndexStats | null; l
             ))}
           </div>
 
-          <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_1.1fr]">
+          <div className="mt-6 grid gap-6 grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
             <ShardGauge stats={stats} />
             <Panel label="spec conformance · full validation, client-side">
               <div className="flex h-full flex-col justify-between gap-6">
