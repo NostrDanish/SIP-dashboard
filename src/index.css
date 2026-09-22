@@ -69,6 +69,15 @@
     overflow-x: hidden;
   }
 
+  /* Mobile safeguard: prose always wraps inside the viewport. */
+  p,
+  h1,
+  h2,
+  h3,
+  li {
+    overflow-wrap: break-word;
+  }
+
   ::selection {
     background: rgba(240, 180, 90, 0.28);
     color: #fff;
@@ -156,7 +165,7 @@
     box-shadow: 0 0 6px rgba(248, 113, 113, 0.6);
   }
 
-  /* Ticker marquee */
+  /* Ticker sits below the fixed two-row header (56px brand row + 37px tab row) */
   .ticker-track {
     display: flex;
     width: max-content;
