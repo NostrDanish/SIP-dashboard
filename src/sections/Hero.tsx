@@ -13,10 +13,10 @@ function EventAnatomy() {
     })),
   ];
   return (
-    <div className="panel reveal relative" style={{ animationDelay: '0.35s' }}>
+    <div className="panel reveal relative min-w-0 overflow-hidden" style={{ animationDelay: '0.35s' }}>
       <div className="font-mono-pd flex items-center justify-between border-b border-[#1a2540] px-4 py-2 text-[10px] uppercase tracking-[0.2em] text-[#7c87a0]">
-        <span>event anatomy · kind {SIP01.kind}</span>
-        <span className="text-[#34d399]">signed</span>
+        <span className="truncate">event anatomy · kind {SIP01.kind}</span>
+        <span className="shrink-0 text-[#34d399]">signed</span>
       </div>
       <div className="font-mono-pd space-y-1 overflow-x-auto p-4 text-[11px] leading-relaxed">
         {lines.map((l, i) => (
@@ -54,8 +54,8 @@ export function Hero({ stats }: { stats: IndexStats | null }) {
             'radial-gradient(ellipse at center, rgba(240,180,90,0.22) 0%, rgba(142,48,235,0.12) 45%, transparent 70%)',
         }}
       />
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 pb-16 pt-14 sm:px-6 lg:grid-cols-[1.2fr_1fr] lg:pt-20">
-        <div>
+      <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)] gap-10 px-4 pb-16 pt-14 sm:px-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:pt-20">
+        <div className="min-w-0">
           <div className="reveal font-mono-pd flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.2em]">
             <span className="border border-[#f0b45a]/50 bg-[#f0b45a]/10 px-2 py-1 text-[#f0b45a]">
               kind {SIP01.kind}
@@ -83,7 +83,7 @@ export function Hero({ stats }: { stats: IndexStats | null }) {
           </h1>
 
           <p
-            className="reveal mt-6 max-w-xl text-balance text-[15px] leading-relaxed text-[#9aa3b8]"
+            className="reveal mt-6 max-w-xl text-[15px] leading-relaxed text-[#9aa3b8] [overflow-wrap:anywhere]"
             style={{ animationDelay: '0.16s' }}
           >
             {SIP01.tagline} Any crawler can publish signed observations, any relay can store them,
@@ -130,7 +130,7 @@ export function Hero({ stats }: { stats: IndexStats | null }) {
           </div>
         </div>
 
-        <div className="lg:pt-10">
+        <div className="min-w-0 lg:pt-10">
           <EventAnatomy />
         </div>
       </div>
